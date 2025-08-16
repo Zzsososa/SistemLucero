@@ -190,6 +190,154 @@ export function AppointmentsManager() {
     setFormErrors({})
   }
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!validateForm()) {
+      return
+    }
+
+    try {
+      const appointmentData = {
+        client_id: parseInt(formData.client_id),
+        service_id: parseInt(formData.service_id),
+        appointment_date: formData.appointment_date,
+        deposit_amount: parseFloat(formData.deposit_amount) || 0,
+        notes: formData.notes,
+        status: formData.status,
+      }
+
+      if (editingAppointment) {
+        const { error } = await supabase
+          .from("appointments")
+          .update(appointmentData)
+          .eq("id", editingAppointment.id)
+
+        if (error) throw error
+        
+        toast({
+          title: "Éxito",
+          description: "Cita actualizada correctamente"
+        })
+      } else {
+        const { error } = await supabase
+          .from("appointments")
+          .insert([appointmentData])
+
+        if (error) throw error
+        
+        toast({
+          title: "Éxito",
+          description: "Cita creada correctamente"
+        })
+      }
+
+      setDialogOpen(false)
+      resetForm()
+      fetchData()
+    } catch (error) {
+      console.error("Error saving appointment:", error)
+      toast({
+        title: "Error",
+        description: "No se pudo guardar la cita",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleEdit = (appointment: Appointment) => {
+    setEditingAppointment(appointment)
+    setFormData({
+      client_id: appointment.client_id.toString(),
+      service_id: appointment.service_id.toString(),
+      appointment_date: appointment.appointment_date,
+      deposit_amount: appointment.deposit_amount?.toString() || "0",
+      notes: appointment.notes || "",
+      status: appointment.status,
+    })
+    setFormErrors({})
+    setDialogOpen(true)
+  }
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("¿Estás seguro de que quieres eliminar esta cita?")) {
+      return
+    }
+
+    try {
+      // Primero verificar si la cita tiene facturas asociadas
+      const { data: invoices, error: invoiceError } = await supabase
+        .from("invoices")
+        .select("id")
+        .eq("appointment_id", id)
+
+      if (invoiceError) {
+        console.error("Error checking invoices:", invoiceError)
+        throw new Error("Error al verificar facturas asociadas")
+      }
+
+      if (invoices && invoices.length > 0) {
+        toast({
+          title: "Error",
+          description: "No se puede eliminar la cita porque tiene facturas asociadas. Elimina primero las facturas.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      // Si no hay facturas, proceder con la eliminación
+      const { error } = await supabase
+        .from("appointments")
+        .delete()
+        .eq("id", id)
+
+      if (error) {
+        console.error("Supabase error:", error)
+        throw error
+      }
+      
+      toast({
+        title: "Éxito",
+        description: "Cita eliminada correctamente"
+      })
+      
+      fetchData()
+    } catch (error: any) {
+      console.error("Error deleting appointment:", error)
+      let errorMessage = "Error desconocido"
+      
+      if (error?.message) {
+        errorMessage = error.message
+      } else if (error?.details) {
+        errorMessage = error.details
+      } else if (error?.hint) {
+        errorMessage = error.hint
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      }
+      
+      toast({
+        title: "Error",
+        description: `No se pudo eliminar la cita: ${errorMessage}`,
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleDuplicate = (appointment: Appointment) => {
+    setFormData({
+      client_id: appointment.client_id.toString(),
+      service_id: appointment.service_id.toString(),
+      appointment_date: "",
+      deposit_amount: appointment.deposit_amount?.toString() || "0",
+      notes: appointment.notes || "",
+      status: "scheduled",
+    })
+    setEditingAppointment(null)
+    setFormErrors({})
+    setDialogOpen(true)
+  }
+
   const getStatusBadge = (status: string) => {
     const variants = {
       scheduled: "default",
@@ -335,8 +483,99 @@ export function AppointmentsManager() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="appointment_date" className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Fecha y Hora *
+                  </Label>
+                  <Input
+                    id="appointment_date"
+                    type="datetime-local"
+                    value={formData.appointment_date}
+                    onChange={(e) => {
+                      setFormData({ ...formData, appointment_date: e.target.value })
+                      if (formErrors.appointment_date) {
+                        setFormErrors({ ...formErrors, appointment_date: "" })
+                      }
+                    }}
+                    className={formErrors.appointment_date ? "border-destructive" : ""}
+                  />
+                  {formErrors.appointment_date && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {formErrors.appointment_date}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="deposit_amount" className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    Depósito
+                  </Label>
+                  <Input
+                    id="deposit_amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.deposit_amount}
+                    onChange={(e) => {
+                      setFormData({ ...formData, deposit_amount: e.target.value })
+                      if (formErrors.deposit_amount) {
+                        setFormErrors({ ...formErrors, deposit_amount: "" })
+                      }
+                    }}
+                    className={formErrors.deposit_amount ? "border-destructive" : ""}
+                  />
+                  {formErrors.deposit_amount && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {formErrors.deposit_amount}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="status" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Estado
+                </Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value: "scheduled" | "completed" | "cancelled") => {
+                    setFormData({ ...formData, status: value })
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="scheduled">Programada</SelectItem>
+                    <SelectItem value="completed">Completada</SelectItem>
+                    <SelectItem value="cancelled">Cancelada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes" className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Notas
+                </Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Notas adicionales sobre la cita..."
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-2 pt-4">
-                <Button type="button" className="flex-1 gap-2">
+                <Button type="button" onClick={handleSubmit} className="flex-1 gap-2">
                   {editingAppointment ? (
                     <>
                       <Edit className="h-4 w-4" />
@@ -493,14 +732,14 @@ export function AppointmentsManager() {
 
                       <div className="flex flex-col gap-2">
                         <div className="flex gap-2">
-                          <Button variant="outline" size="icon">
+                          <Button variant="outline" size="icon" onClick={() => handleEdit(appointment)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="outline" size="icon">
+                          <Button variant="outline" size="icon" onClick={() => handleDuplicate(appointment)}>
                             <Copy className="h-4 w-4" />
                           </Button>
                         </div>
-                        <Button variant="outline" size="icon">
+                        <Button variant="outline" size="icon" onClick={() => handleDelete(appointment.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

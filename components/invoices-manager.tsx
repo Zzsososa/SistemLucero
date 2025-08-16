@@ -438,114 +438,275 @@ export function InvoicesManager() {
               }
               body {
                 margin: 0;
-                padding: 5mm;
+                padding: 3mm;
               }
             }
             
             body {
-              font-family: 'Courier New', monospace;
-              font-size: 12px;
-              line-height: 1.2;
-              width: 70mm;
+              font-family: 'Arial', sans-serif;
+              font-size: 11px;
+              line-height: 1.4;
+              width: 74mm;
               margin: 0 auto;
-              padding: 5mm;
+              padding: 3mm;
               background: white;
+              color: #000;
             }
             
-            .center {
+            .header {
               text-align: center;
+              margin-bottom: 8px;
+              border-bottom: 2px solid #000;
+              padding-bottom: 6px;
             }
             
-            .separator {
-              border-top: 1px dashed #000;
-              margin: 5px 0;
+            .business-name {
+              font-size: 16px;
+              font-weight: bold;
+              letter-spacing: 1px;
+              margin-bottom: 2px;
             }
             
-            .line {
+            .business-subtitle {
+              font-size: 10px;
+              color: #666;
+              margin-bottom: 4px;
+            }
+            
+            .invoice-info {
+              margin: 8px 0;
+              background: #f8f8f8;
+              padding: 6px;
+              border-radius: 3px;
+            }
+            
+            .info-row {
               display: flex;
               justify-content: space-between;
-              margin: 2px 0;
+              margin: 3px 0;
+              font-size: 10px;
             }
             
-            .bold {
+            .info-label {
               font-weight: bold;
+              color: #333;
             }
             
-            .right {
-              text-align: right;
+            .client-info {
+              margin: 8px 0;
+              padding: 6px;
+              border: 1px solid #ddd;
+              border-radius: 3px;
+            }
+            
+            .client-name {
+              font-weight: bold;
+              font-size: 12px;
+              margin-bottom: 2px;
+            }
+            
+            .section-header {
+              text-align: center;
+              font-weight: bold;
+              font-size: 11px;
+              margin: 10px 0 6px 0;
+              padding: 4px 0;
+              border-top: 1px solid #000;
+              border-bottom: 1px solid #000;
+              background: #f0f0f0;
+            }
+            
+            .service-item {
+              margin: 6px 0;
+              padding: 4px;
+              border-left: 3px solid #007acc;
+              background: #f9f9f9;
+            }
+            
+            .service-name {
+              font-weight: bold;
+              font-size: 11px;
+              margin-bottom: 2px;
+            }
+            
+            .service-details {
+              font-size: 10px;
+              color: #666;
+              display: flex;
+              justify-content: space-between;
+            }
+            
+            .calculations {
+              margin-top: 8px;
+              border-top: 1px solid #000;
+              padding-top: 6px;
+            }
+            
+            .calc-line {
+              display: flex;
+              justify-content: space-between;
+              margin: 3px 0;
+              font-size: 10px;
+            }
+            
+            .calc-line.subtotal {
+              border-top: 1px dashed #666;
+              padding-top: 3px;
+              margin-top: 6px;
+            }
+            
+            .calc-line.total {
+              font-weight: bold;
+              font-size: 12px;
+              border-top: 2px solid #000;
+              border-bottom: 2px solid #000;
+              padding: 4px 0;
+              margin: 6px 0;
+              background: #f0f0f0;
+            }
+            
+            .payment-info {
+              margin-top: 8px;
+              padding: 6px;
+              background: #f8f8f8;
+              border-radius: 3px;
+            }
+            
+            .payment-line {
+              display: flex;
+              justify-content: space-between;
+              margin: 3px 0;
+              font-size: 11px;
+            }
+            
+            .payment-line.change {
+              font-weight: bold;
+              color: #007acc;
+            }
+            
+            .footer {
+              text-align: center;
+              margin-top: 12px;
+              padding-top: 8px;
+              border-top: 2px solid #000;
+              font-size: 10px;
+            }
+            
+            .thanks {
+              font-weight: bold;
+              margin-bottom: 4px;
+            }
+            
+            .contact {
+              color: #666;
+              font-size: 9px;
+            }
+            
+            .highlight {
+              background: #ffffcc;
+              padding: 2px;
+            }
+            
+            .negative {
+              color: #d32f2f;
+            }
+            
+            .positive {
+              color: #388e3c;
             }
           </style>
         </head>
         <body>
-          <div class="center bold">
-            ================================<br>
-            LUCERO GLAM STUDIO<br>
-            ================================
+          <div class="header">
+            <div class="business-name">LUCERO GLAM STUDIO</div>
+            <div class="business-subtitle">Centro de Belleza y Estética</div>
           </div>
           
-          <br>
-          
-          <div>Fecha: ${invoiceDate}</div>
-          <div>No. Factura: ${invoice.id}</div>
-          <div>Cliente: ${invoice.appointments.clients.first_name} ${invoice.appointments.clients.last_name}</div>
-          <div>Fecha Cita: ${appointmentDate}</div>
-          
-          <div class="separator"></div>
-          <div class="center bold">---------- SERVICIOS ------------</div>
-          
-          <div>
-            ${invoice.appointments.services.name}<br>
-            1 x $${invoice.appointments.services.price.toFixed(2)} = $${invoice.appointments.services.price.toFixed(2)}
+          <div class="invoice-info">
+            <div class="info-row">
+              <span class="info-label">FACTURA N°:</span>
+              <span class="highlight">#${String(invoice.id).padStart(6, '0')}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">FECHA:</span>
+              <span>${invoiceDate}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">FECHA CITA:</span>
+              <span>${appointmentDate}</span>
+            </div>
           </div>
           
-          <div class="separator"></div>
-          
-          <div class="line">
-            <span>Subtotal:</span>
-            <span>$${subtotal.toFixed(2)}</span>
+          <div class="client-info">
+            <div class="client-name">CLIENTE:</div>
+            <div>${invoice.appointments.clients.first_name} ${invoice.appointments.clients.last_name}</div>
           </div>
           
-          <div class="line">
-            <span>Apartado:</span>
-            <span>-$${apartado.toFixed(2)}</span>
+          <div class="section-header">SERVICIOS REALIZADOS</div>
+          
+          <div class="service-item">
+            <div class="service-name">${invoice.appointments.services.name}</div>
+            <div class="service-details">
+              <span>1 unidad × $${invoice.appointments.services.price.toFixed(2)}</span>
+              <span class="positive">$${invoice.appointments.services.price.toFixed(2)}</span>
+            </div>
           </div>
           
-          <div class="line">
-            <span>Mora:</span>
-            <span>$${invoice.late_fee.toFixed(2)}</span>
+          <div class="calculations">
+            <div class="calc-line subtotal">
+              <span>Subtotal:</span>
+              <span>$${subtotal.toFixed(2)}</span>
+            </div>
+            
+            ${apartado > 0 ? `
+            <div class="calc-line">
+              <span>Apartado:</span>
+              <span class="negative">-$${apartado.toFixed(2)}</span>
+            </div>` : ''}
+            
+            ${invoice.late_fee > 0 ? `
+            <div class="calc-line">
+              <span>Recargo por mora:</span>
+              <span class="negative">+$${invoice.late_fee.toFixed(2)}</span>
+            </div>` : ''}
+            
+            ${invoice.discount > 0 ? `
+            <div class="calc-line">
+              <span>Descuento aplicado:</span>
+              <span class="positive">-$${invoice.discount.toFixed(2)}</span>
+            </div>` : ''}
+            
+            <div class="calc-line total">
+              <span>TOTAL A PAGAR:</span>
+              <span>$${invoice.total_amount.toFixed(2)}</span>
+            </div>
           </div>
           
-          <div class="line">
-            <span>Descuento:</span>
-            <span>-$${invoice.discount.toFixed(2)}</span>
+          <div class="payment-info">
+            <div class="payment-line">
+              <span>Pagado con:</span>
+              <span>$${invoice.paid_amount.toFixed(2)}</span>
+            </div>
+            
+            ${invoice.change_amount > 0 ? `
+            <div class="payment-line change">
+              <span>Su cambio:</span>
+              <span>$${invoice.change_amount.toFixed(2)}</span>
+            </div>` : ''}
           </div>
           
-          <div class="separator"></div>
+          ${invoice.notes ? `
+          <div style="margin-top: 8px; padding: 4px; border: 1px dashed #666; font-size: 9px;">
+            <strong>Notas:</strong> ${invoice.notes}
+          </div>` : ''}
           
-          <div class="line bold">
-            <span>TOTAL A PAGAR:</span>
-            <span>$${invoice.total_amount.toFixed(2)}</span>
-          </div>
-          
-          <div class="line">
-            <span>PAGADO CON:</span>
-            <span>$${invoice.paid_amount.toFixed(2)}</span>
-          </div>
-          
-          <div class="line">
-            <span>CAMBIO:</span>
-            <span>$${invoice.change_amount.toFixed(2)}</span>
-          </div>
-          
-          <div class="separator"></div>
-          
-          <div class="center">
-            ¡GRACIAS POR SU VISITA!<br>
-            Tel: +1 849-532-0716
-          </div>
-          
-          <div class="center">
-            ================================
+          <div class="footer">
+            <div class="thanks">¡GRACIAS POR CONFIAR EN NOSOTROS!</div>
+            <div class="contact">
+              📍 Calle Francisco Richez #44, La Romana, Plaza Artesanal<br>
+              📞 Tel: +1 849-532-0716<br>
+              💄 Su belleza es nuestra pasión
+            </div>
           </div>
           
           <script>
