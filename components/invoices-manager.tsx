@@ -11,7 +11,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Receipt, Plus, Trash2, User, Calendar, DollarSign, Printer, ChevronLeft, ChevronRight, Search, Filter, ArrowUpNarrowWide, Clock, TrendingUp } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Receipt, Plus, Trash2, User, Calendar, DollarSign, Printer, ChevronLeft, ChevronRight, Search, Filter, ArrowUpNarrowWide, Clock, TrendingUp, Check, ChevronsUpDown } from "lucide-react"
 import { supabase, type Appointment, type Service } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
 import { useMemo } from "react"
@@ -38,6 +40,13 @@ interface InvoiceWithDetails {
       price: number
     }
   }
+  invoice_items: {
+    id: number
+    service_name: string
+    unit_price: number
+    quantity: number
+    line_total: number
+  }[]
 }
 
 interface InvoiceItem {
@@ -54,7 +63,9 @@ export function InvoicesManager() {
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [selectedAppointment, setSelectedAppointment] = useState<string>("")
+  const [selectedAppointment, setSelectedAppointment] = useState<string>("")  
+  const [appointmentSearchOpen, setAppointmentSearchOpen] = useState(false)
+  const [appointmentSearchValue, setAppointmentSearchValue] = useState("")
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const invoicesPerPage = 5
@@ -83,8 +94,14 @@ export function InvoicesManager() {
       const serviceName = invoice.appointments.services.name.toLowerCase()
       const searchLower = searchTerm.toLowerCase()
       
+      // Buscar en todos los servicios facturados
+      const invoiceItemsMatch = invoice.invoice_items?.some(item => 
+        item.service_name.toLowerCase().includes(searchLower)
+      ) || false
+      
       const matchesSearch = clientName.includes(searchLower) || 
                            serviceName.includes(searchLower) ||
+                           invoiceItemsMatch ||
                            invoice.id.toString().includes(searchLower)
       
       // Apply filters
@@ -171,6 +188,13 @@ export function InvoicesManager() {
             appointment_date,
             clients (first_name, last_name),
             services (name, price)
+          ),
+          invoice_items (
+            id,
+            service_name,
+            unit_price,
+            quantity,
+            line_total
           )
         `)
         .order("invoice_date", { ascending: false })
@@ -253,6 +277,17 @@ export function InvoicesManager() {
       return
     }
 
+    // Validar que todos los servicios adicionales tengan nombre
+    const emptyServiceItems = invoiceItems.filter(item => !item.service_name || item.service_name.trim() === "")
+    if (emptyServiceItems.length > 0) {
+      toast({
+        title: "Error",
+        description: "Todos los servicios adicionales deben tener un nombre válido. Por favor selecciona un servicio de la lista.",
+        variant: "destructive",
+      })
+      return
+    }
+
     // Validar que el monto pagado sea mayor o igual al total
     const totalAmount = Number.parseFloat(formData.total_amount)
     const paidAmount = Number.parseFloat(formData.paid_amount)
@@ -299,6 +334,13 @@ export function InvoicesManager() {
                 appointment_date,
                 clients (first_name, last_name),
                 services (name, price)
+              ),
+              invoice_items (
+                id,
+                service_name,
+                unit_price,
+                quantity,
+                line_total
               )
             `)
             .eq("appointment_id", Number.parseInt(selectedAppointment))
@@ -325,6 +367,62 @@ export function InvoicesManager() {
     }
   }
 
+  // Función auxiliar para calcular el total incluyendo el descuento del apartado
+  const calculateTotalWithDeposit = (subtotal: number, lateFee: number, discount: number) => {
+    const selectedAppointmentData = completedAppointments.find(
+      (app) => app.id.toString() === selectedAppointment
+    )
+    const depositAmount = selectedAppointmentData?.deposit_amount || 0
+    return subtotal + lateFee - discount - depositAmount
+  }
+
+  // Efecto para precargar el servicio de la cita seleccionada
+  useEffect(() => {
+    if (selectedAppointment) {
+      const appointment = completedAppointments.find(
+        (app) => app.id.toString() === selectedAppointment
+      )
+      
+      if (appointment && appointment.services) {
+        // Precargar el servicio de la cita automáticamente
+        const preloadedItem: InvoiceItem = {
+          service_id: appointment.services.id,
+          service_name: appointment.services.name,
+          unit_price: appointment.services.price,
+          quantity: 1,
+          line_total: appointment.services.price
+        }
+        
+        setInvoiceItems([preloadedItem])
+        
+        // Calcular el total con el servicio precargado
+        const total = calculateTotalWithDeposit(
+          appointment.services.price,
+          Number.parseFloat(formData.late_fee),
+          Number.parseFloat(formData.discount)
+        )
+        setFormData((prev) => ({ ...prev, total_amount: total.toString() }))
+      }
+    } else {
+      // Si no hay cita seleccionada, limpiar los items
+      setInvoiceItems([])
+      setFormData((prev) => ({ ...prev, total_amount: "0" }))
+    }
+  }, [selectedAppointment, completedAppointments])
+
+  // Efecto para recalcular el total cuando cambian los items (para cambios manuales)
+  useEffect(() => {
+    if (invoiceItems.length > 0) {
+      const subtotal = invoiceItems.reduce((sum, item) => sum + item.line_total, 0)
+      const total = calculateTotalWithDeposit(
+        subtotal,
+        Number.parseFloat(formData.late_fee),
+        Number.parseFloat(formData.discount)
+      )
+      setFormData((prev) => ({ ...prev, total_amount: total.toString() }))
+    }
+  }, [invoiceItems, formData.late_fee, formData.discount])
+
   const addInvoiceItem = () => {
     setInvoiceItems([
       ...invoiceItems,
@@ -350,7 +448,7 @@ export function InvoicesManager() {
 
     // Update total amount
     const subtotal = newItems.reduce((sum, item) => sum + item.line_total, 0)
-    const total = subtotal + Number.parseFloat(formData.late_fee) - Number.parseFloat(formData.discount)
+    const total = calculateTotalWithDeposit(subtotal, Number.parseFloat(formData.late_fee), Number.parseFloat(formData.discount))
     setFormData((prev) => ({ ...prev, total_amount: total.toString() }))
   }
 
@@ -360,7 +458,7 @@ export function InvoicesManager() {
 
     // Update total amount
     const subtotal = newItems.reduce((sum, item) => sum + item.line_total, 0)
-    const total = subtotal + Number.parseFloat(formData.late_fee) - Number.parseFloat(formData.discount)
+    const total = calculateTotalWithDeposit(subtotal, Number.parseFloat(formData.late_fee), Number.parseFloat(formData.discount))
     setFormData((prev) => ({ ...prev, total_amount: total.toString() }))
   }
 
@@ -374,6 +472,8 @@ export function InvoicesManager() {
       notes: "",
     })
     setSelectedAppointment("")
+    setAppointmentSearchOpen(false)
+    setAppointmentSearchValue("")
     setInvoiceItems([])
   }
 
@@ -420,8 +520,14 @@ export function InvoicesManager() {
       minute: "2-digit",
     })
 
-    // Calcular subtotal (total - recargo + descuento)
-    const subtotal = invoice.total_amount - invoice.late_fee + invoice.discount
+    // Calcular subtotal: servicio principal + servicios adicionales (sin duplicados)
+    const mainServicePrice = invoice.appointments.services.price
+    const additionalServicesTotal = invoice.invoice_items && invoice.invoice_items.length > 0 
+      ? invoice.invoice_items
+          .filter(item => item.service_name !== invoice.appointments.services.name)
+          .reduce((sum, item) => sum + item.line_total, 0) 
+      : 0
+    const subtotal = mainServicePrice + additionalServicesTotal
     const apartado = 0 // Por ahora en 0, se puede agregar campo después
 
     const printContent = `
@@ -644,6 +750,7 @@ export function InvoicesManager() {
           
           <div class="section-header">SERVICIOS REALIZADOS</div>
           
+          <!-- Servicio principal de la cita -->
           <div class="service-item">
             <div class="service-name">${invoice.appointments.services.name}</div>
             <div class="service-details">
@@ -651,6 +758,21 @@ export function InvoicesManager() {
               <span class="positive">$${invoice.appointments.services.price.toFixed(2)}</span>
             </div>
           </div>
+          
+          <!-- Servicios adicionales -->
+          ${invoice.invoice_items && invoice.invoice_items.length > 0 ? 
+            invoice.invoice_items
+              .filter(item => item.service_name !== invoice.appointments.services.name)
+              .map(item => `
+                <div class="service-item">
+                  <div class="service-name">${item.service_name || 'Servicio sin nombre'}</div>
+                  <div class="service-details">
+                    <span>${item.quantity} unidad${item.quantity > 1 ? 's' : ''} × $${item.unit_price.toFixed(2)}</span>
+                    <span class="positive">$${item.line_total.toFixed(2)}</span>
+                  </div>
+                </div>
+              `).join('') : ''
+          }
           
           <div class="calculations">
             <div class="calc-line subtotal">
@@ -874,24 +996,119 @@ export function InvoicesManager() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="appointment_id">Cita Completada</Label>
-                <Select value={selectedAppointment} onValueChange={setSelectedAppointment}>
-                  <SelectTrigger id="appointment_id">
-                    <SelectValue placeholder="Seleccionar cita" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {completedAppointments.map((appointment) => (
-                      <SelectItem key={appointment.id} value={appointment.id.toString()}>
-                        {appointment.clients?.first_name} {appointment.clients?.last_name} -{" "}
-                        {appointment.services?.name} ({new Date(appointment.appointment_date).toLocaleDateString()})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={appointmentSearchOpen} onOpenChange={setAppointmentSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="appointment_id"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={appointmentSearchOpen}
+                      className="w-full justify-between"
+                    >
+                      {selectedAppointment
+                        ? (() => {
+                            const appointment = completedAppointments.find(
+                              (app) => app.id.toString() === selectedAppointment
+                            )
+                            return appointment
+                              ? `${appointment.clients?.first_name} ${appointment.clients?.last_name} - ${appointment.services?.name} (${new Date(appointment.appointment_date).toLocaleDateString()})`
+                              : "Seleccionar cita"
+                          })()
+                        : "Seleccionar cita"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput
+                        placeholder="Buscar cita por cliente o servicio..."
+                        value={appointmentSearchValue}
+                        onValueChange={setAppointmentSearchValue}
+                      />
+                      <CommandList>
+                        <CommandEmpty>No se encontraron citas.</CommandEmpty>
+                        <CommandGroup>
+                          {completedAppointments
+                            .filter((appointment) => {
+                              const searchTerm = appointmentSearchValue.toLowerCase()
+                              const clientName = `${appointment.clients?.first_name} ${appointment.clients?.last_name}`.toLowerCase()
+                              const serviceName = appointment.services?.name.toLowerCase() || ""
+                              const appointmentDate = new Date(appointment.appointment_date).toLocaleDateString().toLowerCase()
+                              return (
+                                clientName.includes(searchTerm) ||
+                                serviceName.includes(searchTerm) ||
+                                appointmentDate.includes(searchTerm)
+                              )
+                            })
+                            .map((appointment) => {
+                              const searchableValue = `${appointment.clients?.first_name} ${appointment.clients?.last_name} ${appointment.services?.name} ${new Date(appointment.appointment_date).toLocaleDateString()}`
+                              return (
+                              <CommandItem
+                                key={appointment.id}
+                                value={searchableValue}
+                                onSelect={() => {
+                                  setSelectedAppointment(appointment.id.toString())
+                                  setAppointmentSearchOpen(false)
+                                  setAppointmentSearchValue("")
+                                }}
+                              >
+                                <Check
+                                  className={`mr-2 h-4 w-4 ${
+                                    selectedAppointment === appointment.id.toString()
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  }`}
+                                />
+                                <div className="flex flex-col">
+                                  <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4" />
+                                    <span className="font-medium">
+                                      {appointment.clients?.first_name} {appointment.clients?.last_name}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Calendar className="h-3 w-3" />
+                                    <span>{new Date(appointment.appointment_date).toLocaleDateString()}</span>
+                                    <span>•</span>
+                                    <span>{appointment.services?.name}</span>
+                                    <span>•</span>
+                                    <DollarSign className="h-3 w-3" />
+                                    <span>${appointment.services?.price}</span>
+                                  </div>
+                                </div>
+                              </CommandItem>
+                              )
+                            })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 {completedAppointments.length === 0 && (
                   <p className="text-sm text-muted-foreground mt-1">
                     No hay citas completadas disponibles para facturar
                   </p>
                 )}
+                
+                {/* Mostrar información del apartado de la cita seleccionada */}
+                {selectedAppointment && (() => {
+                  const appointment = completedAppointments.find(
+                    (app) => app.id.toString() === selectedAppointment
+                  )
+                  return appointment && appointment.deposit_amount > 0 ? (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center gap-2 text-sm">
+                        <DollarSign className="h-4 w-4 text-blue-600" />
+                        <span className="font-medium text-blue-800">
+                          Apartado pagado: ${appointment.deposit_amount.toFixed(2)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-blue-600 mt-1">
+                        Este monto será descontado automáticamente del total
+                      </p>
+                    </div>
+                  ) : null
+                })()}
               </div>
 
               {/* Invoice Items */}
@@ -918,13 +1135,25 @@ export function InvoicesManager() {
                   <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 p-4 border rounded-lg bg-muted/30">
                     <div className="col-span-4">
                       <Select
-                        value={item.service_id?.toString() || ""}
+                        key={`${index}-${item.service_name}`}
+                        value={item.service_name || undefined}
                         onValueChange={(value) => {
-                          const service = services.find((s) => s.id.toString() === value)
+                          const service = services.find((s) => s.name === value)
                           if (service) {
-                            updateInvoiceItem(index, "service_id", service.id)
-                            updateInvoiceItem(index, "service_name", service.name)
-                            updateInvoiceItem(index, "unit_price", service.price)
+                            const newItems = [...invoiceItems]
+                            newItems[index] = {
+                              ...newItems[index],
+                              service_id: service.id,
+                              service_name: service.name,
+                              unit_price: service.price,
+                              line_total: service.price * newItems[index].quantity
+                            }
+                            setInvoiceItems(newItems)
+                            
+                            // Update total amount
+                            const subtotal = newItems.reduce((sum, item) => sum + item.line_total, 0)
+                            const total = calculateTotalWithDeposit(subtotal, Number.parseFloat(formData.late_fee), Number.parseFloat(formData.discount))
+                            setFormData((prev) => ({ ...prev, total_amount: total.toString() }))
                           }
                         }}
                       >
@@ -933,7 +1162,7 @@ export function InvoicesManager() {
                         </SelectTrigger>
                         <SelectContent>
                           {services.map((service) => (
-                            <SelectItem key={service.id} value={service.id.toString()}>
+                            <SelectItem key={service.id} value={service.name}>
                               {service.name} - ${service.price}
                             </SelectItem>
                           ))}
@@ -984,7 +1213,7 @@ export function InvoicesManager() {
                       setFormData({ ...formData, late_fee: newValue })
                       // Recalculate total
                       const subtotal = invoiceItems.reduce((sum, item) => sum + item.line_total, 0)
-                      const total = subtotal + Number.parseFloat(newValue) - Number.parseFloat(formData.discount)
+                      const total = calculateTotalWithDeposit(subtotal, Number.parseFloat(newValue), Number.parseFloat(formData.discount))
                       setFormData((prev) => ({ ...prev, late_fee: newValue, total_amount: total.toString() }))
                     }}
                   />
@@ -1003,12 +1232,58 @@ export function InvoicesManager() {
                       setFormData({ ...formData, discount: newValue })
                       // Recalculate total
                       const subtotal = invoiceItems.reduce((sum, item) => sum + item.line_total, 0)
-                      const total = subtotal + Number.parseFloat(formData.late_fee) - Number.parseFloat(newValue)
+                      const total = calculateTotalWithDeposit(subtotal, Number.parseFloat(formData.late_fee), Number.parseFloat(newValue))
                       setFormData((prev) => ({ ...prev, discount: newValue, total_amount: total.toString() }))
                     }}
                   />
                 </div>
               </div>
+
+              {/* Desglose del cálculo */}
+              {selectedAppointment && (() => {
+                const appointment = completedAppointments.find(
+                  (app) => app.id.toString() === selectedAppointment
+                )
+                const subtotal = invoiceItems.reduce((sum, item) => sum + item.line_total, 0)
+                const depositAmount = appointment?.deposit_amount || 0
+                const lateFee = Number.parseFloat(formData.late_fee) || 0
+                const discount = Number.parseFloat(formData.discount) || 0
+                
+                return subtotal > 0 || depositAmount > 0 ? (
+                  <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <h4 className="font-medium text-sm mb-3 text-gray-700">Desglose del Cálculo</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Subtotal servicios:</span>
+                        <span>${subtotal.toFixed(2)}</span>
+                      </div>
+                      {lateFee > 0 && (
+                        <div className="flex justify-between text-red-600">
+                          <span>+ Recargo tardío:</span>
+                          <span>${lateFee.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {discount > 0 && (
+                        <div className="flex justify-between text-green-600">
+                          <span>- Descuento:</span>
+                          <span>${discount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {depositAmount > 0 && (
+                        <div className="flex justify-between text-blue-600 font-medium">
+                          <span>- Apartado pagado:</span>
+                          <span>${depositAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <hr className="my-2" />
+                      <div className="flex justify-between font-semibold">
+                        <span>Total a pagar:</span>
+                        <span>${(subtotal + lateFee - discount - depositAmount).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : null
+              })()}
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
@@ -1118,7 +1393,27 @@ export function InvoicesManager() {
                       <Calendar className="h-4 w-4" />
                       {new Date(invoice.invoice_date).toLocaleDateString()}
                     </div>
-                    <span>Servicio: {invoice.appointments.services.name}</span>
+                  </div>
+
+                  {/* Servicios facturados */}
+                  <div className="mb-3">
+                    <div className="text-sm font-medium text-muted-foreground mb-1">Servicios facturados:</div>
+                    <div className="space-y-1">
+                      {invoice.invoice_items && invoice.invoice_items.length > 0 ? (
+                        invoice.invoice_items.map((item, index) => (
+                          <div key={item.id || index} className="flex justify-between items-center text-sm bg-muted/50 px-2 py-1 rounded">
+                            <span>
+                              {item.service_name} {item.quantity > 1 && `(x${item.quantity})`}
+                            </span>
+                            <span className="font-medium">${item.line_total.toFixed(2)}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-muted-foreground italic">
+                          Servicio de cita: {invoice.appointments.services.name}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-4 text-sm">
