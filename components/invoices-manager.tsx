@@ -302,6 +302,24 @@ export function InvoicesManager() {
     }
 
     try {
+      console.log("Datos del formulario antes de enviar:", {
+        selectedAppointment,
+        formData,
+        invoiceItems
+      })
+      
+      // Log de los datos que se están enviando para debugging
+      console.log("Datos enviados a la función RPC:", {
+        p_appointment_id: Number.parseInt(selectedAppointment),
+        p_total_amount: Number.parseFloat(formData.total_amount),
+        p_paid_amount: Number.parseFloat(formData.paid_amount),
+        p_change_amount: Number.parseFloat(formData.change_amount),
+        p_late_fee: Number.parseFloat(formData.late_fee),
+        p_discount: Number.parseFloat(formData.discount),
+        p_notes: formData.notes || null,
+        p_items: invoiceItems,
+      })
+
       // Use the RPC function to save invoice with items atomically
       const { data, error } = await supabase.rpc("save_invoice_with_items", {
         p_appointment_id: Number.parseInt(selectedAppointment),
@@ -314,7 +332,20 @@ export function InvoicesManager() {
         p_items: invoiceItems,
       })
 
-      if (error) throw error
+      console.log("Respuesta de Supabase:", { data, error })
+
+      if (error) {
+        console.error("Error detallado de Supabase:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          fullError: error
+        })
+        throw error
+      }
+
+      console.log("Factura creada exitosamente con ID:", data)
 
       toast({
         title: "Éxito",
@@ -359,9 +390,30 @@ export function InvoicesManager() {
       fetchData()
     } catch (error) {
       console.error("Error saving invoice:", error)
+      
+      // Log más detallado del error con tipado correcto
+      if (error && typeof error === 'object') {
+        const errorObj = error as any
+        console.error("Error detallado:", {
+          message: errorObj.message || 'Sin mensaje',
+          stack: errorObj.stack || 'Sin stack trace',
+          name: errorObj.name || 'Sin nombre',
+          cause: errorObj.cause || 'Sin causa',
+          fullError: error
+        })
+      }
+      
+      // Verificar si es un error de Supabase específico
+      const supabaseError = error as any
+      if (supabaseError?.code) {
+        console.error("Código de error Supabase:", supabaseError.code)
+        console.error("Detalles del error:", supabaseError.details)
+        console.error("Hint del error:", supabaseError.hint)
+      }
+
       toast({
         title: "Error",
-        description: "No se pudo crear la factura",
+        description: `No se pudo crear la factura. ${(error as any)?.message || 'Error desconocido'}`,
         variant: "destructive",
       })
     }
@@ -462,6 +514,8 @@ export function InvoicesManager() {
     setFormData((prev) => ({ ...prev, total_amount: total.toString() }))
   }
 
+
+
   const resetForm = () => {
     setFormData({
       total_amount: "0",
@@ -472,9 +526,8 @@ export function InvoicesManager() {
       notes: "",
     })
     setSelectedAppointment("")
-    setAppointmentSearchOpen(false)
-    setAppointmentSearchValue("")
     setInvoiceItems([])
+    setAppointmentSearchValue("")
   }
 
   const handleDelete = async (id: number) => {
@@ -1325,6 +1378,8 @@ export function InvoicesManager() {
                 </div>
               </div>
 
+
+
               <div>
                 <Label htmlFor="notes">Notas</Label>
                 <Textarea
@@ -1423,8 +1478,8 @@ export function InvoicesManager() {
                     </span>
                     <span>Pagado: ${invoice.paid_amount}</span>
                     {invoice.change_amount > 0 && <span>Cambio: ${invoice.change_amount}</span>}
-                    {invoice.late_fee > 0 && <Badge variant="destructive">Recargo: ${invoice.late_fee}</Badge>}
-                    {invoice.discount > 0 && <Badge variant="secondary">Descuento: ${invoice.discount}</Badge>}
+                    {invoice.late_fee > 0 && <span>Recargo: ${invoice.late_fee}</span>}
+                    {invoice.discount > 0 && <span>Descuento: ${invoice.discount}</span>}
                   </div>
 
                   {invoice.notes && <p className="text-sm text-muted-foreground mt-2">{invoice.notes}</p>}

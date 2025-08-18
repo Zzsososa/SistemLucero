@@ -19,8 +19,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
+    // Mark that we're now on the client side
+    setIsClient(true)
+  }, [])
+
+  useEffect(() => {
+    // Only run localStorage logic after we're on the client
+    if (!isClient) return
+
     // Verificar si hay un usuario guardado en localStorage al cargar la aplicación
     const checkStoredUser = () => {
       try {
@@ -51,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     checkStoredUser()
-  }, [])
+  }, [isClient])
 
   const login = (userData: User) => {
     setUser(userData)
@@ -60,7 +69,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem('user')
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user')
+    }
   }
 
   const value = {

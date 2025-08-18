@@ -12,8 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, Clock, Edit, Plus, Trash2, User, Scissors, Search, Filter, Copy, Phone, DollarSign, AlertCircle, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
-import { CalendarView } from "@/components/calendar-view";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Calendar, Clock, Edit, Plus, Trash2, User, Scissors, Search, Filter, Copy, Phone, DollarSign, AlertCircle, MessageSquare, ChevronLeft, ChevronRight, Check, ChevronsUpDown } from "lucide-react"
+import { CalendarView } from "@/components/calendar-view"
 import { supabase, type Appointment, type Client, type Service } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
 
@@ -29,6 +31,11 @@ export function AppointmentsManager() {
   const [dateFilter, setDateFilter] = useState("all")
   const [activeTab, setActiveTab] = useState("list")
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  
+  // Estados para el selector de cliente
+  const [clientSearchOpen, setClientSearchOpen] = useState(false)
+  const [clientSearchValue, setClientSearchValue] = useState("")
+  
   const { toast } = useToast()
 
   // Estado de paginación
@@ -50,6 +57,20 @@ export function AppointmentsManager() {
     notes: "",
     status: "scheduled",
   })
+
+  // Cliente seleccionado para mostrar en el selector
+  const selectedClient = clients.find(client => client.id.toString() === formData.client_id)
+  
+  // Clientes filtrados para la búsqueda
+  const filteredClients = useMemo(() => {
+    if (!clientSearchValue) return clients
+    return clients.filter(client => {
+      const fullName = `${client.first_name} ${client.last_name}`.toLowerCase()
+      const phone = client.phone_number?.toLowerCase() || ''
+      return fullName.includes(clientSearchValue.toLowerCase()) || 
+             phone.includes(clientSearchValue.toLowerCase())
+    })
+  }, [clients, clientSearchValue])
 
   useEffect(() => {
     fetchData()
@@ -188,6 +209,7 @@ export function AppointmentsManager() {
     })
     setEditingAppointment(null)
     setFormErrors({})
+    setClientSearchValue("")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -403,32 +425,70 @@ export function AppointmentsManager() {
                     <User className="h-4 w-4" />
                     Cliente *
                   </Label>
-                  <Select
-                    value={formData.client_id}
-                    onValueChange={(value) => {
-                      setFormData({ ...formData, client_id: value })
-                      if (formErrors.client_id) {
-                        setFormErrors({ ...formErrors, client_id: "" })
-                      }
-                    }}
-                  >
-                    <SelectTrigger className={formErrors.client_id ? "border-destructive" : ""}>
-                      <SelectValue placeholder="Seleccionar cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id.toString()}>
+                  <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={clientSearchOpen}
+                        className={`w-full justify-between ${formErrors.client_id ? "border-destructive" : ""}`}
+                      >
+                        {selectedClient ? (
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4" />
-                            {client.first_name} {client.last_name}
-                            {client.phone_number && (
-                              <span className="text-xs text-muted-foreground">({client.phone_number})</span>
+                            {selectedClient.first_name} {selectedClient.last_name}
+                            {selectedClient.phone_number && (
+                              <span className="text-xs text-muted-foreground">({selectedClient.phone_number})</span>
                             )}
                           </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        ) : (
+                          "Seleccionar cliente..."
+                        )}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput 
+                          placeholder="Buscar cliente..." 
+                          value={clientSearchValue}
+                          onValueChange={setClientSearchValue}
+                        />
+                        <CommandList>
+                          <CommandEmpty>No se encontraron clientes.</CommandEmpty>
+                          <CommandGroup>
+                            {filteredClients.map((client) => (
+                              <CommandItem
+                                key={client.id}
+                                value={`${client.first_name} ${client.last_name} ${client.phone_number || ''}`}
+                                onSelect={() => {
+                                  setFormData({ ...formData, client_id: client.id.toString() })
+                                  setClientSearchOpen(false)
+                                  setClientSearchValue("")
+                                  if (formErrors.client_id) {
+                                    setFormErrors({ ...formErrors, client_id: "" })
+                                  }
+                                }}
+                              >
+                                <Check
+                                  className={`mr-2 h-4 w-4 ${
+                                    formData.client_id === client.id.toString() ? "opacity-100" : "opacity-0"
+                                  }`}
+                                />
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4" />
+                                  {client.first_name} {client.last_name}
+                                  {client.phone_number && (
+                                    <span className="text-xs text-muted-foreground">({client.phone_number})</span>
+                                  )}
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   {formErrors.client_id && (
                     <p className="text-sm text-destructive flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
