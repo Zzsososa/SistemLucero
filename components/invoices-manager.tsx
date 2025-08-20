@@ -31,6 +31,7 @@ interface InvoiceWithDetails {
   appointments: {
     id: number
     appointment_date: string
+    deposit_amount: number
     clients: {
       first_name: string
       last_name: string
@@ -186,6 +187,7 @@ export function InvoicesManager() {
           appointments (
             id,
             appointment_date,
+            deposit_amount,
             clients (first_name, last_name),
             services (name, price)
           ),
@@ -574,14 +576,14 @@ export function InvoicesManager() {
     })
 
     // Calcular subtotal: servicio principal + servicios adicionales (sin duplicados)
-    const mainServicePrice = invoice.appointments.services.price
-    const additionalServicesTotal = invoice.invoice_items && invoice.invoice_items.length > 0 
-      ? invoice.invoice_items
-          .filter(item => item.service_name !== invoice.appointments.services.name)
-          .reduce((sum, item) => sum + item.line_total, 0) 
-      : 0
-    const subtotal = mainServicePrice + additionalServicesTotal
-    const apartado = 0 // Por ahora en 0, se puede agregar campo después
+  const mainServicePrice = invoice.appointments.services.price
+  const additionalServicesTotal = invoice.invoice_items && invoice.invoice_items.length > 0 
+    ? invoice.invoice_items
+        .filter(item => item.service_name !== invoice.appointments.services.name)
+        .reduce((sum, item) => sum + item.line_total, 0) 
+    : 0
+  const subtotal = mainServicePrice + additionalServicesTotal
+  const apartado = invoice.appointments.deposit_amount || 0  // Usar el valor real del apartado
 
     const printContent = `
       <!DOCTYPE html>
@@ -777,7 +779,9 @@ export function InvoicesManager() {
         </head>
         <body>
           <div class="header">
-            <div class="business-name">LUCERO GLAM STUDIO</div>
+            <div class="business-name">LUCERO GUERRERO 
+              <br>
+              GLAM STUDIO</div>
             <div class="business-subtitle">Centro de Belleza y Estética</div>
           </div>
           
@@ -800,6 +804,17 @@ export function InvoicesManager() {
             <div class="client-name">CLIENTE:</div>
             <div>${invoice.appointments.clients.first_name} ${invoice.appointments.clients.last_name}</div>
           </div>
+          
+          ${apartado > 0 ? `
+          <div class="payment-info" style="background: #f0f8ff; border: 1px solid #b3d9ff; margin: 8px 0;">
+            <div class="info-row">
+              <span class="info-label">💰 APARTADO PREVIO:</span>
+              <span style="font-weight: bold; color: #0066cc;">$${apartado.toFixed(2)}</span>
+            </div>
+            <div style="font-size: 9px; color: #666; margin-top: 2px;">
+              Monto pagado al momento de la reserva
+            </div>
+          </div>` : ''}
           
           <div class="section-header">SERVICIOS REALIZADOS</div>
           
@@ -834,8 +849,8 @@ export function InvoicesManager() {
             </div>
             
             ${apartado > 0 ? `
-            <div class="calc-line">
-              <span>Apartado:</span>
+            <div class="calc-line" style="background: #e3f2fd; padding: 4px; border-radius: 3px; font-weight: bold;">
+              <span>💰 Apartado pagado:</span>
               <span class="negative">-$${apartado.toFixed(2)}</span>
             </div>` : ''}
             
@@ -853,7 +868,7 @@ export function InvoicesManager() {
             
             <div class="calc-line total">
               <span>TOTAL A PAGAR:</span>
-              <span>$${invoice.total_amount.toFixed(2)}</span>
+              <span>$${(subtotal + invoice.late_fee - invoice.discount - apartado).toFixed(2)}</span>
             </div>
           </div>
           
@@ -878,7 +893,7 @@ export function InvoicesManager() {
           <div class="footer">
             <div class="thanks">¡GRACIAS POR CONFIAR EN NOSOTROS!</div>
             <div class="contact">
-              📍 Calle Francisco Richez #44, La Romana, Plaza Artesanal<br>
+              📍 Calle Francisco Richiez #44, La Romana, Plaza Artesanal<br>
               📞 Tel: +1 849-532-0716<br>
               💄 Su belleza es nuestra pasión
             </div>
