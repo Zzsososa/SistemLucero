@@ -605,7 +605,7 @@ export function InvoicesManager() {
             
             body {
             font-family: 'Arial', sans-serif;
-            font-size: 13px;
+            font-size: 15px;
             line-height: 1.4;
             width: 74mm;
             margin: 0 auto;
@@ -622,14 +622,14 @@ export function InvoicesManager() {
           }
           
           .business-name {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
             letter-spacing: 1px;
             margin-bottom: 2px;
           }
           
           .business-subtitle {
-            font-size: 12px;
+            font-size: 14px;
             color: #666;
             margin-bottom: 4px;
           }
@@ -645,7 +645,7 @@ export function InvoicesManager() {
             display: flex;
             justify-content: space-between;
             margin: 3px 0;
-            font-size: 12px;
+            font-size: 14px;
           }
           
           .info-label {
@@ -662,14 +662,14 @@ export function InvoicesManager() {
           
           .client-name {
             font-weight: bold;
-            font-size: 14px;
+            font-size: 16px;
             margin-bottom: 2px;
           }
           
           .section-header {
             text-align: center;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 15px;
             margin: 10px 0 6px 0;
             padding: 4px 0;
             border-top: 1px solid #000;
@@ -686,12 +686,12 @@ export function InvoicesManager() {
           
           .service-name {
             font-weight: bold;
-            font-size: 13px;
+            font-size: 15px;
             margin-bottom: 2px;
           }
           
           .service-details {
-            font-size: 12px;
+            font-size: 14px;
             color: #666;
             display: flex;
             justify-content: space-between;
@@ -707,7 +707,7 @@ export function InvoicesManager() {
             display: flex;
             justify-content: space-between;
             margin: 3px 0;
-            font-size: 12px;
+            font-size: 14px;
           }
           
           .calc-line.subtotal {
@@ -718,7 +718,7 @@ export function InvoicesManager() {
           
           .calc-line.total {
             font-weight: bold;
-            font-size: 14px;
+            font-size: 16px;
             border-top: 2px solid #000;
             border-bottom: 2px solid #000;
             padding: 4px 0;
@@ -737,7 +737,7 @@ export function InvoicesManager() {
             display: flex;
             justify-content: space-between;
             margin: 3px 0;
-            font-size: 13px;
+            font-size: 15px;
           }
           
           .payment-line.change {
@@ -750,7 +750,7 @@ export function InvoicesManager() {
             margin-top: 12px;
             padding-top: 8px;
             border-top: 2px solid #000;
-            font-size: 12px;
+            font-size: 14px;
           }
           
           .thanks {
@@ -760,7 +760,7 @@ export function InvoicesManager() {
           
           .contact {
             color: #666;
-            font-size: 11px;
+            font-size: 13px;
             font-weight: bold;
           }
             
