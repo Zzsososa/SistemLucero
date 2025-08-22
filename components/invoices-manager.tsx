@@ -604,164 +604,165 @@ export function InvoicesManager() {
             }
             
             body {
-              font-family: 'Arial', sans-serif;
-              font-size: 11px;
-              line-height: 1.4;
-              width: 74mm;
-              margin: 0 auto;
-              padding: 3mm;
-              background: white;
-              color: #000;
-            }
-            
-            .header {
-              text-align: center;
-              margin-bottom: 8px;
-              border-bottom: 2px solid #000;
-              padding-bottom: 6px;
-            }
-            
-            .business-name {
-              font-size: 16px;
-              font-weight: bold;
-              letter-spacing: 1px;
-              margin-bottom: 2px;
-            }
-            
-            .business-subtitle {
-              font-size: 10px;
-              color: #666;
-              margin-bottom: 4px;
-            }
-            
-            .invoice-info {
-              margin: 8px 0;
-              background: #f8f8f8;
-              padding: 6px;
-              border-radius: 3px;
-            }
-            
-            .info-row {
-              display: flex;
-              justify-content: space-between;
-              margin: 3px 0;
-              font-size: 10px;
-            }
-            
-            .info-label {
-              font-weight: bold;
-              color: #333;
-            }
-            
-            .client-info {
-              margin: 8px 0;
-              padding: 6px;
-              border: 1px solid #ddd;
-              border-radius: 3px;
-            }
-            
-            .client-name {
-              font-weight: bold;
-              font-size: 12px;
-              margin-bottom: 2px;
-            }
-            
-            .section-header {
-              text-align: center;
-              font-weight: bold;
-              font-size: 11px;
-              margin: 10px 0 6px 0;
-              padding: 4px 0;
-              border-top: 1px solid #000;
-              border-bottom: 1px solid #000;
-              background: #f0f0f0;
-            }
-            
-            .service-item {
-              margin: 6px 0;
-              padding: 4px;
-              border-left: 3px solid #007acc;
-              background: #f9f9f9;
-            }
-            
-            .service-name {
-              font-weight: bold;
-              font-size: 11px;
-              margin-bottom: 2px;
-            }
-            
-            .service-details {
-              font-size: 10px;
-              color: #666;
-              display: flex;
-              justify-content: space-between;
-            }
-            
-            .calculations {
-              margin-top: 8px;
-              border-top: 1px solid #000;
-              padding-top: 6px;
-            }
-            
-            .calc-line {
-              display: flex;
-              justify-content: space-between;
-              margin: 3px 0;
-              font-size: 10px;
-            }
-            
-            .calc-line.subtotal {
-              border-top: 1px dashed #666;
-              padding-top: 3px;
-              margin-top: 6px;
-            }
-            
-            .calc-line.total {
-              font-weight: bold;
-              font-size: 12px;
-              border-top: 2px solid #000;
-              border-bottom: 2px solid #000;
-              padding: 4px 0;
-              margin: 6px 0;
-              background: #f0f0f0;
-            }
-            
-            .payment-info {
-              margin-top: 8px;
-              padding: 6px;
-              background: #f8f8f8;
-              border-radius: 3px;
-            }
-            
-            .payment-line {
-              display: flex;
-              justify-content: space-between;
-              margin: 3px 0;
-              font-size: 11px;
-            }
-            
-            .payment-line.change {
-              font-weight: bold;
-              color: #007acc;
-            }
-            
-            .footer {
-              text-align: center;
-              margin-top: 12px;
-              padding-top: 8px;
-              border-top: 2px solid #000;
-              font-size: 10px;
-            }
-            
-            .thanks {
-              font-weight: bold;
-              margin-bottom: 4px;
-            }
-            
-            .contact {
-              color: #666;
-              font-size: 9px;
-            }
+            font-family: 'Arial', sans-serif;
+            font-size: 13px;
+            line-height: 1.4;
+            width: 74mm;
+            margin: 0 auto;
+            padding: 3mm;
+            background: white;
+            color: #000;
+          }
+          
+          .header {
+            text-align: center;
+            margin-bottom: 8px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 6px;
+          }
+          
+          .business-name {
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+          }
+          
+          .business-subtitle {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+          }
+          
+          .invoice-info {
+            margin: 8px 0;
+            background: #f8f8f8;
+            padding: 6px;
+            border-radius: 3px;
+          }
+          
+          .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+            font-size: 12px;
+          }
+          
+          .info-label {
+            font-weight: bold;
+            color: #333;
+          }
+          
+          .client-info {
+            margin: 8px 0;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+          }
+          
+          .client-name {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 2px;
+          }
+          
+          .section-header {
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            margin: 10px 0 6px 0;
+            padding: 4px 0;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            background: #f0f0f0;
+          }
+          
+          .service-item {
+            margin: 6px 0;
+            padding: 4px;
+            border-left: 3px solid #007acc;
+            background: #f9f9f9;
+          }
+          
+          .service-name {
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 2px;
+          }
+          
+          .service-details {
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+          }
+          
+          .calculations {
+            margin-top: 8px;
+            border-top: 1px solid #000;
+            padding-top: 6px;
+          }
+          
+          .calc-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+            font-size: 12px;
+          }
+          
+          .calc-line.subtotal {
+            border-top: 1px dashed #666;
+            padding-top: 3px;
+            margin-top: 6px;
+          }
+          
+          .calc-line.total {
+            font-weight: bold;
+            font-size: 14px;
+            border-top: 2px solid #000;
+            border-bottom: 2px solid #000;
+            padding: 4px 0;
+            margin: 6px 0;
+            background: #f0f0f0;
+          }
+          
+          .payment-info {
+            margin-top: 8px;
+            padding: 6px;
+            background: #f8f8f8;
+            border-radius: 3px;
+          }
+          
+          .payment-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+            font-size: 13px;
+          }
+          
+          .payment-line.change {
+            font-weight: bold;
+            color: #007acc;
+          }
+          
+          .footer {
+            text-align: center;
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 2px solid #000;
+            font-size: 12px;
+          }
+          
+          .thanks {
+            font-weight: bold;
+            margin-bottom: 4px;
+          }
+          
+          .contact {
+            color: #666;
+            font-size: 11px;
+            font-weight: bold;
+          }
             
             .highlight {
               background: #ffffcc;
