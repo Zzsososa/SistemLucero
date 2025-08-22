@@ -760,7 +760,7 @@ export function InvoicesManager() {
           
           .contact {
             color: #666;
-            font-size: 13px;
+            font-size: 16px;
             font-weight: bold;
           }
             
@@ -809,10 +809,10 @@ export function InvoicesManager() {
           ${apartado > 0 ? `
           <div class="payment-info" style="background: #f0f8ff; border: 1px solid #b3d9ff; margin: 8px 0;">
             <div class="info-row">
-              <span class="info-label">💰 APARTADO PREVIO:</span>
-              <span style="font-weight: bold; color: #0066cc;">$${apartado.toFixed(2)}</span>
+              <span class="info-label" style="font-weight: bold; font-size: 15px;">💰 APARTADO PREVIO:</span>
+              <span style="font-weight: bold; color: #0066cc; font-size: 15px;">$${apartado.toFixed(2)}</span>
             </div>
-            <div style="font-size: 9px; color: #666; margin-top: 2px;">
+            <div style="font-size: 10px; color: #666; margin-top: 2px; font-weight: bold;">
               Monto pagado al momento de la reserva
             </div>
           </div>` : ''}
